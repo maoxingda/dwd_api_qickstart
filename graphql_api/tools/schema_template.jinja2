@@ -1,0 +1,26 @@
+import graphene
+
+{% for code in codes %}
+class {{ code.table_name }}(graphene.ObjectType):
+    {%- for column in code.columns %}
+    {{ column }} = graphene.Field(
+        graphene.String,
+        resolver=lambda parent, context: '{{ column }}'
+    )
+    {% endfor %}
+    {% for relationship in code.relationships %}
+    {{ relationship }} = graphene.Field(
+        '{{ relationship | capitalize }}',
+        resolver=lambda parent, context: {{ relationship | capitalize }}()
+    )
+    {% endfor %}
+{% endfor %}
+class Query(graphene.ObjectType):
+    {%- for code in codes %}
+    {%- if code.table_type == 'dwd' or code.table_type == 'dim' %}
+    {{ code.table_name }} = graphene.Field(
+        {{ code.table_name }},
+        resolver=lambda parent, context: {{ code.table_name }}()
+    )
+    {%- endif %}
+    {%- endfor %}
