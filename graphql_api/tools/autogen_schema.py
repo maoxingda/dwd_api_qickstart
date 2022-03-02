@@ -14,33 +14,37 @@ def build_schema():
     logger.info("Building schema...")
     code_objs = []
     for table in Table.objects.all():
-        table_name = table.name[0].upper() + to_camel_case(table.name[1:])
-        relationships1 = [relation for relation in table.left_table_name.all() if relation.left_table_name_id == table.id]
-        relationships2 = [relation for relation in table.right_table_name.all() if relation.right_table_name_id == table.id]
-        relationships = relationships1 + relationships2
-        for relation in relationships:
-            print(relation.left_table_name)
+        class_name = table.name[0].upper() + to_camel_case(table.name[1:])
+        relationships = []
+        if table.table_type == 'dwd':
+            relationships1 = [relation for relation in table.left_table_name.all() if relation.left_table_name_id == table.id]
+            relationships2 = [relation for relation in table.right_table_name.all() if relation.right_table_name_id == table.id]
+            relationships = relationships1 + relationships2
         columns = []
         for column in table.column_set.all():
             columns.append(str(column))
+        relationships_content = []
+        for relation in relationships:
+            relation_class_name = relation.right_table_name.name[0].upper() + to_camel_case(relation.right_table_name.name[1:])
+            relation_field_name = to_camel_case(relation.right_table_name.name)
+            relationships_content.append({
+                'relation_class_name': relation_class_name,
+                'relation_field_name': relation_field_name,
+            })
         code_objs.append({
-            'table_name': table_name,
+            'class_name': class_name,
+            'field_name': table.name,
             'table_type': table.table_type,
             'columns': columns,
-            'relationships': [
-                to_camel_case(relation.right_table_name.name) for relation in relationships
-            ]
+            'relationships': relationships_content,
         })
 
     content = Template(open('graphql_api/tools/schema_template.jinja2').read()).render({
-        'codes': code_objs
+        'codes': code_objs,
     })
-
-    pprint(code_objs)
 
     with open('graphql_api/schema.py', 'w') as f:
         f.write(content)
-        f.write('\n')
 
     logger.info("Build schema finished.")
 

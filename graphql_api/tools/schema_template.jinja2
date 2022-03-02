@@ -1,7 +1,20 @@
 import graphene
 
 {% for code in codes %}
-class {{ code.table_name }}(graphene.ObjectType):
+{%- if code.table_type == 'dim' %}
+class {{ code.class_name }}(graphene.ObjectType):
+    {%- for column in code.columns %}
+    {{ column }} = graphene.Field(
+        graphene.String,
+        resolver=lambda parent, context: '{{ column }}'
+    )
+    {% endfor %}
+{% endif %}
+{% endfor %}
+
+{% for code in codes %}
+{%- if code.table_type == 'dwd' %}
+class {{ code.class_name }}(graphene.ObjectType):
     {%- for column in code.columns %}
     {{ column }} = graphene.Field(
         graphene.String,
@@ -9,18 +22,20 @@ class {{ code.table_name }}(graphene.ObjectType):
     )
     {% endfor %}
     {% for relationship in code.relationships %}
-    {{ relationship }} = graphene.Field(
-        '{{ relationship | capitalize }}',
-        resolver=lambda parent, context: {{ relationship | capitalize }}()
+    {{ relationship.relation_field_name }} = graphene.Field(
+        {{ relationship.relation_class_name }},
+        resolver=lambda parent, context: {{ relationship.relation_class_name }}()
     )
     {% endfor %}
+{% endif %}
 {% endfor %}
+
 class Query(graphene.ObjectType):
     {%- for code in codes %}
     {%- if code.table_type == 'dwd' or code.table_type == 'dim' %}
-    {{ code.table_name }} = graphene.Field(
-        {{ code.table_name }},
-        resolver=lambda parent, context: {{ code.table_name }}()
+    {{ code.field_name }} = graphene.Field(
+        {{ code.class_name }},
+        resolver=lambda parent, context: {{ code.class_name }}()
     )
     {%- endif %}
     {%- endfor %}
