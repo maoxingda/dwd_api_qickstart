@@ -1,9 +1,14 @@
 import graphene
+from graphene.utils.str_converters import to_snake_case
 
-{% for code in codes %}
-{%- if code.table_type == 'dim' %}
-class {{ code.class_name }}(graphene.ObjectType):
-    {%- for column in code.columns %}
+from graphql_api.models import Table, Relationship
+from graphql_api.tools.parser import parse
+
+{# 先定义维度表 #}
+{% for table in tables %}
+{% if table.table_type == 'DIM' %}
+class {{ table.table_name }}(graphene.ObjectType):
+    {% for column in table.table_columns %}
     {{ column }} = graphene.Field(
         graphene.String,
         resolver=lambda parent, context: '{{ column }}'
@@ -12,30 +17,72 @@ class {{ code.class_name }}(graphene.ObjectType):
 {% endif %}
 {% endfor %}
 
-{% for code in codes %}
-{%- if code.table_type == 'dwd' %}
-class {{ code.class_name }}(graphene.ObjectType):
-    {%- for column in code.columns %}
+{# 再定义事实表 #}
+{% for table in tables %}
+{% if table.table_type == 'DWD' %}
+class {{ table.table_name }}(graphene.ObjectType):
+    {% for column in table.table_columns %}
     {{ column }} = graphene.Field(
         graphene.String,
         resolver=lambda parent, context: '{{ column }}'
     )
     {% endfor %}
-    {% for relationship in code.relationships %}
+    {% for relationship in table.relationships %}
     {{ relationship.relation_field_name }} = graphene.Field(
-        {{ relationship.relation_class_name }},
-        resolver=lambda parent, context: {{ relationship.relation_class_name }}()
+        {{ relationship.relation_table_name }},
+        resolver=lambda parent, context: {{ relationship.relation_table_name }}()
     )
     {% endfor %}
 {% endif %}
+{% endfor %}
+
+{# 包装SQL字段 #}
+{% for table in tables %}
+class {{ table.table_name }}WithSQL(graphene.ObjectType):
+    {{ table.field_name }} = graphene.Field(
+        {{ table.table_name }},
+        resolver=lambda parent, context: {{ table.table_name }}()
+    )
+    sql = graphene.String()
 {% endfor %}
 
 class Query(graphene.ObjectType):
-    {%- for code in codes %}
-    {%- if code.table_type == 'dwd' or code.table_type == 'dim' %}
-    {{ code.field_name }} = graphene.Field(
-        {{ code.class_name }},
-        resolver=lambda parent, context: {{ code.class_name }}()
+{% for table in tables %}
+    {{ table.field_name }}_with_sql = graphene.Field(
+        {{ table.table_name }}WithSQL
     )
-    {%- endif %}
-    {%- endfor %}
+
+    def resolve_{{ table.field_name }}_with_sql(parent, context):
+        tables = parse(context.field_asts)
+        # query relationship from database
+        dwd_tables = {}
+        dim_tables = {}
+        relationships = []
+        for table_name in tables.keys():
+            table = Table.objects.get(name=to_snake_case(table_name))
+            if table.table_type == 'DWD':
+                dwd_tables[table.name] = tables[table_name]
+                relations = Relationship.objects.filter(left_table_name__name=to_snake_case(table_name))
+                for relation in relations:
+                    relationships.append(relation)
+            elif table.table_type == 'DIM':
+                dim_tables[table_name] = tables[table_name]
+        # concat sql
+        select_columns = set()
+        for relationship in relationships:
+            for dim_table_name, columns in dim_tables.items():
+                select_columns = select_columns.union({
+                    relationship.right_table_name.alias + '.' + column + ' as ' + relationship.right_table_name.alias + '_' + column
+                    for column in columns if relationship.right_table_name.name == dim_table_name})
+            for dwd_table_name, columns in dwd_tables.items():
+                select_columns = select_columns.union({
+                    relationship.left_table_name.alias + '.' + column + ' as ' + relationship.left_table_name.alias + '_' + column
+                    for column in columns if relationship.left_table_name.name == dwd_table_name})
+
+        sql = f'select {", ".join(select_columns)} from dwd.{relationship.left_table_name.name} as {relationship.left_table_name.alias}'
+        for relationship in relationships:
+            sql += f' {relationship.join_type.lower().replace("_", " ")} dim.{relationship.right_table_name} as {relationship.right_table_name.alias} on {relationship.join_condition}'
+
+        return UserOrdersWithSQL(sql=sql)
+{% endfor %}
+    hello = graphene.String(default_value='Hello World!')

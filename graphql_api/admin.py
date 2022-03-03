@@ -9,7 +9,7 @@ class ColumnInline(admin.StackedInline):
 
 @admin.register(Table)
 class TableAdmin(admin.ModelAdmin):
-    list_display = ('name', 'table_type', 'columns')
+    list_display = ('name', 'alias', 'table_type', 'columns')
     inlines = [
         ColumnInline,
     ]
