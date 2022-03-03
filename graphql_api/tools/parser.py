@@ -1,17 +1,28 @@
 """Parse tables and select columns list from graphql AST"""
 
 
-def parse(ast):
-    def _parse(node, tables, table_name):
-        if node.name.value == 'sql':
-            return
-        if node.selection_set is None:
-            tables[table_name].append(node.name.value)
-            return
-        if not node.name.value.endswith('_with_sql'):
-            tables[node.name.value] = []
+def parse(ast, tables):
+    def get_table_alias(table_name):
+        for table in tables:
+            if table_name == table.name:
+                return table.alias
+
+    def _parse(node, tables, table_name, level):
+        if level > 1:
+            tables[node.name.value] = {
+                'columns': [],
+                'parent': table_name
+            }
+
         for field in node.selection_set.selections:
-            _parse(field, tables, node.name.value)
+            if field.name.value == 'sql':
+                continue
+            if field.selection_set is None:
+                tables[node.name.value]['columns'].append(f'{get_table_alias(node.name.value)}.{field.name.value}')
+                continue
+
+            _parse(field, tables, node.name.value, level + 1)
+
         return tables
 
-    return _parse(ast[0], {}, '')
+    return _parse(ast[0], {}, '', 1)

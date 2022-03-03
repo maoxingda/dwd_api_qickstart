@@ -1,53 +1,80 @@
 import logging
 
 import graphene
-
+from graphene.utils.str_converters import to_camel_case, to_snake_case
 from jinja2 import Template
 
-from graphql_api.constants.constant import TableTypes
-from graphql_api.models import Table
-from graphene.utils.str_converters import to_camel_case, to_snake_case
+from graphql_api.models import Table, Relationship
 
 logger = logging.getLogger(__name__)
 
 
 def build_schema():
     logger.info("Building schema...")
-    tables = []
-    for table in Table.objects.all():
-        table_columns = [str(column) for column in table.column_set.all()]
 
-        relationships = []
-        if table.table_type == TableTypes.DWD.name:
-            relationships1 = [relation for relation in table.left_table_name.all() if relation.left_table_name_id == table.id]
-            relationships2 = [relation for relation in table.right_table_name.all() if relation.right_table_name_id == table.id]
-            relationships = relationships1 + relationships2
+    tables = Table.objects.all()
+    relationships = Relationship.objects.all()
 
-        relationships_content = []
-        for relation in relationships:
-            relation_table_name = relation.right_table_name.name[0].upper() + to_camel_case(relation.right_table_name.name[1:])
-            relation_field_name = to_snake_case(relation.right_table_name.name)
-            relationships_content.append({
-                'relation_table_name': relation_table_name,
-                'relation_field_name': relation_field_name,
+    # Collect table's directly children.
+    tables_children = {}
+    for table in tables:
+        tables_children[table.name] = []
+        for relationship in relationships:
+            if relationship.left_table_name_id == table.id:
+                tables_children[table.name].append(relationship.right_table_name.name)
+
+    def sort_tables(tables, tables_visited):
+        def is_visited(table, tables_visited):
+            tables = []
+            for tv in tables_visited:
+                tables += tv.keys()
+            return table in tables
+
+        for table, table_children in tables.items():
+            if any(table in tv.keys() for tv in tables_visited):
+                continue
+            elif len(table_children) == 0 or all(is_visited(child, tables_visited) for child in table_children):
+                tables_visited.append({table: table_children})
+                tables[table] = None
+        if any(table_children for _, table_children in tables.items()):
+            return sort_tables(tables, tables_visited)
+        else:
+            return tables_visited
+
+    # define leaf node firstly.
+    tables_children = sort_tables(tables_children, [])
+
+    # prepare template substitution context.
+    graphql_objects = []
+    for table in tables_children:
+        for table_name, children in table.items():
+            table_columns = [str(column) for t in tables for column in t.column_set.all() if t.name == table_name]
+
+            table_children = []
+            for child in children:
+                child_table_name = child[0].upper() + to_camel_case(child[1:])
+                child_field_name = to_snake_case(child)
+                table_children.append({
+                    'child_table_name': child_table_name,
+                    'child_field_name': child_field_name,
+                })
+
+            graphql_objects.append({
+                'class_name': table_name[0].upper() + to_camel_case(table_name[1:]),
+                'wrapper_class_field_name': table_name,
+                'table_type': 'table.table_type',
+                'fields': table_columns,
+                'children': table_children,
             })
 
-        tables.append({
-            'table_name': table.name[0].upper() + to_camel_case(table.name[1:]),
-            'field_name': table.name,
-            'table_type': table.table_type,
-            'table_columns': table_columns,
-            'relationships': relationships_content,
-        })
-
     with open('graphql_api/tools/schema_template.jinja2') as f:
-        content = Template(f.read()).render({'tables': tables})
+        template_code = Template(f.read()).render({'objects': graphql_objects})
 
     with open('graphql_api/schema.py', 'w') as f:
-        f.write(content)
-
-    logger.info("Build schema finished.")
+        f.write(template_code)
 
     from graphql_api.schema import Query
+
+    logger.info("Build schema finished.")
 
     return graphene.Schema(query=Query, auto_camelcase=False)  # type: ignore

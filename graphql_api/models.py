@@ -7,7 +7,7 @@ from graphql_api.constants.constant import TableTypes, JoinTypes
 
 
 class Table(models.Model):
-    name = models.CharField(max_length=128, unique=True)
+    name = models.CharField(max_length=128, unique=True, db_index=True)
     alias = models.CharField(max_length=32, unique=True)
     table_type = models.CharField(max_length=32, choices=[
         (table_type.name, table_type.value) for table_type in TableTypes
@@ -29,12 +29,9 @@ class Column(models.Model):
 
 
 class Relationship(models.Model):
-    JOIN_TYPES = [
-        ('inner join', 'NNER JOIN'),
-        ('left join', 'LEFT JOIN'),
-        ('right join', 'RIGHT JOIN'),
-        ('full join', 'FULL JOIN'),
-    ]
+    class Meta:
+        unique_together = ('left_table_name', 'right_table_name')
+
     left_table_name = models.ForeignKey(Table, related_name='left_table_name', on_delete=models.CASCADE)
     right_table_name = models.ForeignKey(Table, related_name='right_table_name', on_delete=models.CASCADE)
     join_type = models.CharField(max_length=16, choices=[
