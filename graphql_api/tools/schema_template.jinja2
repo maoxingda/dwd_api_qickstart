@@ -60,12 +60,12 @@ class Query(graphene.ObjectType):
         relationships = []
         for table_name in tables.keys():
             table = Table.objects.get(name=to_snake_case(table_name))
-            if table.table_type == 'DWD':
+            if table.table_type == TableTypes.DWD.name:
                 dwd_tables[table.name] = tables[table_name]
                 relations = Relationship.objects.filter(left_table_name__name=to_snake_case(table_name))
                 for relation in relations:
                     relationships.append(relation)
-            elif table.table_type == 'DIM':
+            elif table.table_type == TableTypes.DIM.name:
                 dim_tables[table_name] = tables[table_name]
         # concat sql
         select_columns = set()
