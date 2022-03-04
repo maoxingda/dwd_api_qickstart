@@ -13,7 +13,8 @@ class ColumnInline(admin.StackedInline):
 
 @admin.register(Table)
 class TableAdmin(admin.ModelAdmin):
-    list_display = ('name', 'alias', 'table_type', 'columns')
+    search_fields = ('name', 'alias')
+    list_display = ('name', 'alias', 'table_type')
     inlines = [
         ColumnInline,
     ]

@@ -1,6 +1,7 @@
 import graphene
 from jinja2 import Template
 from graphql_api.constants.constant import TableTypes
+from graphql_api.tools.dbutils import connection
 from graphene.utils.str_converters import to_snake_case
 
 from graphql_api.models import Table, Relationship
@@ -32,6 +33,7 @@ class {{ obj.class_name }}WithSQL(graphene.ObjectType):
         resolver=lambda parent, context: {{ obj.class_name }}()
     )
     sql = graphene.String()
+    data = graphene.String(description='test only.')
 {% endfor %}
 
 {# 定义graphql查询入口 #}
@@ -93,9 +95,18 @@ class Query(graphene.ObjectType):
             f'from {" ".join(from_clause if len(from_clause) else [get_table(table_name).table_type.lower() + "."+ table_name])}'
         ]
 
+        # test only.
+        is_execute_sql = any(['data' == field.name.value for field in context.field_asts[0].selection_set.selections])
+        if is_execute_sql:
+            with connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(f'select * from ({" ".join(sql)}) limit 1')
+                    data = cursor.fetchone()
+
+            return UserOrdersWithSQL(sql=' '.join(sql), data=", ".join([str(d) for d in data]))
+
         return UserOrdersWithSQL(sql=' '.join(sql))
 {% endif %}
 {% endfor %}
 
-    # test only.
-    hello = graphene.String(default_value='Hello World!')
+    hello = graphene.String(default_value='Hello World!', description='test only.')

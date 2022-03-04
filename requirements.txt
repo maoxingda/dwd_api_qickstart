@@ -1,3 +1,5 @@
-Django<3.2
-graphene-django==2.15.0
-Jinja2
+Django==3.1.14
+graphene==2.1.9
+graphene_django==2.15.0
+Jinja2==3.0.3
+psycopg2==2.8.6
