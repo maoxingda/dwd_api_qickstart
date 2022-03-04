@@ -27,7 +27,7 @@ class {{ obj.class_name }}(graphene.ObjectType):
 
 {# 包装SQL字段 #}
 {% for obj in objects %}
-class {{ obj.class_name }}WithSQL(graphene.ObjectType):
+class {{ obj.class_name }}_(graphene.ObjectType):
     {{ obj.wrapper_class_field_name }} = graphene.Field(
         {{ obj.class_name }},
         resolver=lambda parent, context: {{ obj.class_name }}()
@@ -40,11 +40,11 @@ class {{ obj.class_name }}WithSQL(graphene.ObjectType):
 class Query(graphene.ObjectType):
 {% for obj in objects %}
 {% if obj.table_type == 'DWD' %}
-    {{ obj.wrapper_class_field_name }}_with_sql = graphene.Field(
-        {{ obj.class_name }}WithSQL
+    {{ obj.wrapper_class_field_name }}_ = graphene.Field(
+        {{ obj.class_name }}_
     )
 
-    def resolve_{{ obj.wrapper_class_field_name }}_with_sql(parent, context):
+    def resolve_{{ obj.wrapper_class_field_name }}_(parent, context):
         tables = Table.objects.all()
 
         def get_table(table_name):
@@ -103,9 +103,9 @@ class Query(graphene.ObjectType):
                     cursor.execute(f'select * from ({" ".join(sql)}) limit 1')
                     data = cursor.fetchone()
 
-            return UserOrdersWithSQL(sql=' '.join(sql), data=", ".join([str(d) for d in data]))
+            return UserOrders_(sql=' '.join(sql), data=", ".join([str(d) for d in data]))
 
-        return UserOrdersWithSQL(sql=' '.join(sql))
+        return UserOrders_(sql=' '.join(sql))
 {% endif %}
 {% endfor %}
 
