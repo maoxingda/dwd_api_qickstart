@@ -52,6 +52,10 @@ def build_schema():
         for table_name, children in table.items():
             table_columns = [str(column) for t in tables for column in t.column_set.all() if t.name == table_name]
 
+            # skip empty table
+            if len(table_columns) == 0:
+                break
+
             table_children = []
             for child in children:
                 child_table_name = child[0].upper() + to_camel_case(child[1:])

@@ -14,6 +14,7 @@ class ColumnInline(admin.StackedInline):
 @admin.register(Table)
 class TableAdmin(admin.ModelAdmin):
     search_fields = ('name', 'alias')
+    list_filter = ('table_type',)
     list_display = ('name', 'alias', 'table_type')
     inlines = [
         ColumnInline,
@@ -24,5 +25,6 @@ class TableAdmin(admin.ModelAdmin):
 class RelationshipsAdmin(admin.ModelAdmin):
     form = RelationshipAdminForm
 
+    list_filter = ('join_type', 'left_table_name__name', 'right_table_name__name')
     search_fields = ('left_table_name__name', 'right_table_name__name')
     list_display = ('left_table_name', 'join_type', 'right_table_name', 'join_condition')
