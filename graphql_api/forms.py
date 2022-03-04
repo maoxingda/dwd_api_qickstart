@@ -16,8 +16,8 @@ class RelationshipAdminForm(ModelForm):
         if ltbl.id == rtbl.id:
             raise ValidationError(f'{self.cleaned_data["left_table_name"]} can not join with it self.')
 
-        if len(Relationship.objects.filter(left_table_name__id=ltbl.id).filter(right_table_name__id=rtbl.id)) > 0:
+        if Relationship.objects.filter(left_table_name__id=ltbl.id).filter(right_table_name__id=rtbl.id).count() > 0:
             raise ValidationError(f'({ltbl.name} <---> {rtbl.name}), already exist.')
 
-        if len(Relationship.objects.filter(right_table_name__id=ltbl.id).filter(left_table_name__id=rtbl.id)) > 0:
+        if Relationship.objects.filter(right_table_name__id=ltbl.id).filter(left_table_name__id=rtbl.id).count() > 0:
             raise ValidationError(f'({rtbl.name} <---> {ltbl.name}), already exist.')

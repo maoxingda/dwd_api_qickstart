@@ -91,7 +91,7 @@ class Query(graphene.ObjectType):
                     Template(relationship.join_condition).render({'l': parent_table.alias, 'r': table.alias}))
 
         sql = [
-            f'select {", ".join(select_columns if len(from_clause) else [column[3:] for column in select_columns])}',
+            f'select {", ".join(select_columns if len(from_clause) else [column[column.index(".") + 1:] for column in select_columns])}',
             f'from {" ".join(from_clause if len(from_clause) else [get_table(table_name).table_type.lower() + "."+ table_name])}'
         ]
 
