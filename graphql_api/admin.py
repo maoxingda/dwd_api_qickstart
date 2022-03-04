@@ -1,6 +1,10 @@
 from django.contrib import admin
 
+from graphql_api.forms import RelationshipAdminForm
 from graphql_api.models import Relationship, Table, Column
+
+admin.site.site_title = 'dwd API admin'
+admin.site.site_header = 'dwd'
 
 
 class ColumnInline(admin.StackedInline):
@@ -17,4 +21,7 @@ class TableAdmin(admin.ModelAdmin):
 
 @admin.register(Relationship)
 class RelationshipsAdmin(admin.ModelAdmin):
-    list_display = ('left_table_name', 'right_table_name', 'join_type', 'join_condition')
+    form = RelationshipAdminForm
+
+    search_fields = ('left_table_name__name', 'right_table_name__name')
+    list_display = ('left_table_name', 'join_type', 'right_table_name', 'join_condition')

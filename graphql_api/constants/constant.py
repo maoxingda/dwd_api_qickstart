@@ -1,6 +1,9 @@
 from enum import Enum
 
 
+TABLE_NAME_REGEXP = r'^[a-z][_a-z0-9]{4,}$'
+
+
 class TableTypes(Enum):
     DWD = '事实表'
     DIM = '维度表'

@@ -6,6 +6,7 @@ from graphene.utils.str_converters import to_snake_case
 from graphql_api.models import Table, Relationship
 from graphql_api.tools.parser import parse
 
+{# 类定义 #}
 {% for obj in objects %}
 class {{ obj.class_name }}(graphene.ObjectType):
     {% for field in obj.fields %}
@@ -33,8 +34,10 @@ class {{ obj.class_name }}WithSQL(graphene.ObjectType):
     sql = graphene.String()
 {% endfor %}
 
+{# 定义graphql查询入口 #}
 class Query(graphene.ObjectType):
 {% for obj in objects %}
+{% if obj.table_type == 'DWD' %}
     {{ obj.wrapper_class_field_name }}_with_sql = graphene.Field(
         {{ obj.class_name }}WithSQL
     )
@@ -51,17 +54,14 @@ class Query(graphene.ObjectType):
         from_tables = parse(context.field_asts, tables)
 
         # cat sql
-        i = 0
         from_clause = []
         select_columns = []
         for table_name, value in from_tables.items():
             table = get_table(table_name)
             parent_table = get_table(value['parent'])
-            parent_table_name = value['parent']
-            select_columns += [f'{column} as {column.replace(".", "_")}' for column in value['columns']]
+            select_columns += [f'{column} as {column.replace(".", "_")}' if len(from_tables.keys()) > 1 else column for column in value['columns']]
 
-            i += 1
-            if i == 1:
+            if not parent_table:
                 continue
 
             # query relationship from db
@@ -88,8 +88,14 @@ class Query(graphene.ObjectType):
                 from_clause.append(
                     Template(relationship.join_condition).render({'l': parent_table.alias, 'r': table.alias}))
 
-        sql = f'select {", ".join(select_columns)} from {" ".join(from_clause)}'
+        sql = [
+            f'select {", ".join(select_columns if len(from_clause) else [column[3:] for column in select_columns])}',
+            f'from {" ".join(from_clause if len(from_clause) else [get_table(table_name).table_type.lower() + "."+ table_name])}'
+        ]
 
-        return UserOrdersWithSQL(sql=sql)
+        return UserOrdersWithSQL(sql=' '.join(sql))
+{% endif %}
 {% endfor %}
+
+    # test only.
     hello = graphene.String(default_value='Hello World!')

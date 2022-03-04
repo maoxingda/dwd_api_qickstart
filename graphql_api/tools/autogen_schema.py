@@ -17,7 +17,9 @@ def build_schema():
 
     # Collect table's directly children.
     tables_children = {}
+    table_types = {}
     for table in tables:
+        table_types[table.name] = table.table_type
         tables_children[table.name] = []
         for relationship in relationships:
             if relationship.left_table_name_id == table.id:
@@ -62,7 +64,7 @@ def build_schema():
             graphql_objects.append({
                 'class_name': table_name[0].upper() + to_camel_case(table_name[1:]),
                 'wrapper_class_field_name': table_name,
-                'table_type': 'table.table_type',
+                'table_type': table_types[table_name],
                 'fields': table_columns,
                 'children': table_children,
             })
