@@ -45,18 +45,24 @@ class Query(graphene.ObjectType):
         {{ obj.class_name }}_
     )
 
+    @staticmethod
     def resolve_{{ obj.wrapper_class_field_name }}_(parent, context):
         tables = Table.objects.all()
+        tables_alias = {table.name: table.alias for table in tables}
 
-        def get_table(table_name):
+        def get_table(table_name_):
             for table in tables:
-                if table.name == table_name:
+                if table.name == table_name_:
                     return table
 
         # parse from tables and select columns from graphql context
-        from_tables = parse(context.field_asts, tables)
+        from_tables = parse(context.field_asts, tables_alias)
+
+        if not from_tables:
+            return
 
         # cat sql
+        table_name = ''
         from_clause = []
         select_columns = []
         for table_name, value in from_tables.items():
@@ -92,8 +98,8 @@ class Query(graphene.ObjectType):
                     Template(relationship.join_condition).render({'l': parent_table.alias, 'r': table.alias}))
 
         sql = [
-            f'select {", ".join(select_columns if len(from_clause) else [column[column.index(".") + 1:] for column in select_columns])}',
-            f'from {" ".join(from_clause if len(from_clause) else [get_table(table_name).table_type.lower() + "."+ table_name])}'
+            f'select {", ".join(select_columns if from_clause else [column[column.index(".") + 1:] for column in select_columns])}',
+            f'from {" ".join(from_clause if from_clause else [get_table(table_name).table_type.lower() + "."+ table_name])}'
         ]
 
         # test only.
