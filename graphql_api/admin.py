@@ -9,6 +9,7 @@ admin.site.site_header = 'dwd'
 
 class ColumnInline(admin.StackedInline):
     model = Column
+    extra = 0
 
 
 @admin.register(Table)

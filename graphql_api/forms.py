@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class RelationshipAdminForm(ModelForm):
     def clean(self):
+        super(RelationshipAdminForm, self).clean()
         ltbl = self.cleaned_data['left_table_name']
         rtbl = self.cleaned_data['right_table_name']
 
