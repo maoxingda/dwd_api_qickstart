@@ -29,3 +29,5 @@ class RelationshipsAdmin(admin.ModelAdmin):
     list_filter = ('join_type', 'left_table_name__name', 'right_table_name__name')
     search_fields = ('left_table_name__name', 'right_table_name__name')
     list_display = ('left_table_name', 'join_type', 'right_table_name', 'join_condition')
+
+    autocomplete_fields = ('left_table_name', 'right_table_name')
