@@ -44,5 +44,6 @@ class Relationship(models.Model):
     join_condition = models.TextField(default='{{ l }}.column_name = {{ r }}.column_name')
 
     def __str__(self):
-        return json.dumps({attr_name: value for attr_name, value in vars(self).items() if attr_name != '_state'},
-                          default=str)
+        return self.left_table_name.name + '__' + self.right_table_name.name
+        # return json.dumps({attr_name: value for attr_name, value in vars(self).items() if attr_name != '_state'},
+        #                   default=str)
