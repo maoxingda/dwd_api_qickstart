@@ -7,25 +7,25 @@ from graphene.utils.str_converters import to_snake_case
 from graphql_api.models import Table, Relationship
 from graphql_api.tools.parser import parse
 
-{# 类定义 #}
+{# graphql objects definition #}
 {% for obj in objects %}
 class {{ obj.class_name }}(graphene.ObjectType):
-    {% for field in obj.fields %}
-    {{ field }} = graphene.Field(
-        graphene.String,
-        resolver=lambda parent, context: '{{ field }}'
-    )
-    {% endfor %}
-
     {% for child in obj.children %}
     {{ child.child_field_name }} = graphene.Field(
         {{ child.child_table_name }},
         resolver=lambda parent, context: {{ child.child_table_name }}()
     )
     {% endfor %}
+
+    {% for field in obj.fields %}
+    {{ field }} = graphene.Field(
+        graphene.String,
+        resolver=lambda parent, context: '{{ field }}'
+    )
+    {% endfor %}
 {% endfor %}
 
-{# 包装SQL字段 #}
+{# wrapper sql & data field #}
 {% for obj in objects %}
 class {{ obj.class_name }}_(graphene.ObjectType):
     {{ obj.wrapper_class_field_name }} = graphene.Field(
@@ -36,7 +36,7 @@ class {{ obj.class_name }}_(graphene.ObjectType):
     data = graphene.String(description='test only.')
 {% endfor %}
 
-{# 定义graphql查询入口 #}
+{# graphql qeury entry points #}
 class Query(graphene.ObjectType):
 {% for obj in objects %}
 {% if obj.table_type == 'DWD' %}

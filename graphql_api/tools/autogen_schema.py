@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+import time
 
 import graphene
 from graphene.utils.str_converters import to_camel_case, to_snake_case
@@ -15,7 +15,7 @@ def build_schema():
     if os.environ.get('rebuild_schema', '0') == '1':
         logger.info("Building schema...")
 
-        start = datetime.utcnow()
+        start = time.time()
 
         tables = Table.objects.all()
         relationships = Relationship.objects.all()
@@ -84,12 +84,12 @@ def build_schema():
         with open('graphql_api/schema.py', 'w') as f:
             f.write(template_code)
 
-        end = datetime.utcnow()
+        end = time.time()
 
-        if (end - start).seconds < 60:
-            logger.info(f'Elapsed: {(end - start).seconds} seconds.')
+        if end - start < 60:
+            logger.info(f'Elapsed: {int(end - start)} seconds.')
         else:
-            logger.info(f'Elapsed: {(end - start).seconds / 60} minutes.')
+            logger.info(f'Elapsed: {(end - start) // 60} minutes.')
 
         logger.info("Build schema finished.")
 
