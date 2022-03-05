@@ -32,7 +32,7 @@ class Column(models.Model):
     name = models.CharField(max_length=128)
 
     def __str__(self):
-        return self.name
+        return ''
 
 
 class Relationship(models.Model):

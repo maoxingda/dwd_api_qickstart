@@ -50,7 +50,7 @@ def build_schema():
         graphql_objects = []
         for table_name, children in tables_children.items():
             table_columns = [
-                str(column) for table in tables for column in table.column_set.all()
+                column.name for table in tables for column in table.column_set.all()
                 if table.name == table_name
             ]
 

@@ -7,7 +7,7 @@ admin.site.site_title = 'dwd API admin'
 admin.site.site_header = 'dwd'
 
 
-class ColumnInline(admin.StackedInline):
+class ColumnInline(admin.TabularInline):
     model = Column
     extra = 0
 
