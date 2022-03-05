@@ -1,3 +1,4 @@
+import os
 import graphene
 from jinja2 import Template
 from graphql_api.constants.constant import TableTypes
@@ -98,12 +99,12 @@ class Query(graphene.ObjectType):
         # test only.
         is_execute_sql = any(['data' == field.name.value for field in context.field_asts[0].selection_set.selections])
         if is_execute_sql:
-            with connection() as conn:
+            with connection(prod=os.environ.get('prod', '0')) as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(f'select * from ({" ".join(sql)}) limit 1')
                     data = cursor.fetchone()
-
-            return UserOrders_(sql=' '.join(sql), data=", ".join([str(d) for d in data]))
+                    if data:
+                        return UserOrders_(sql=' '.join(sql), data=", ".join([str(d) for d in data]))
 
         return UserOrders_(sql=' '.join(sql))
 {% endif %}
