@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
                     get_table_columns_cursor.execute('set search_path to dwd, dim')
                     get_table_columns_cursor.execute(f'''
-                        SELECT * FROM pg_table_def WHERE tablename = '{table_name}';
+                        select * from pg_table_def where tablename = '{table_name}';
                     ''')
 
                     # sql = f"select name from graphql_api_table where name = '{table_name}'"
