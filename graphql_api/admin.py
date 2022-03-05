@@ -1,4 +1,5 @@
 from django.contrib import admin
+from admin_auto_filters.filters import AutocompleteFilter
 
 from graphql_api.forms import RelationshipAdminForm
 from graphql_api.models import Relationship, Table, Column
@@ -22,11 +23,17 @@ class TableAdmin(admin.ModelAdmin):
     ]
 
 
+class RelationshipsFilter(AutocompleteFilter):
+    title = 'Base Table'
+    field_name = 'left_table_name'
+
+
 @admin.register(Relationship)
 class RelationshipsAdmin(admin.ModelAdmin):
     form = RelationshipAdminForm
 
-    list_filter = ('join_type', 'left_table_name__name', 'right_table_name__name')
+    # list_filter = ('join_type', 'left_table_name__name', 'right_table_name__name')
+    list_filter = (RelationshipsFilter,)
     search_fields = ('left_table_name__name', 'right_table_name__name')
     list_display = ('left_table_name', 'join_type', 'right_table_name', 'join_condition')
 

@@ -1,4 +1,5 @@
 Django==3.1.14
+django_admin_autocomplete_filter==0.7.1
 graphene==2.1.9
 graphene_django==2.15.0
 Jinja2==3.0.3
