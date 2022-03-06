@@ -35,7 +35,7 @@ class TableAdmin(admin.ModelAdmin):
 
 
 class RelationshipsFilter(AutocompleteFilter):
-    title = 'Base Table'
+    title = 'left table name'
     field_name = 'left_table_name'
 
 
