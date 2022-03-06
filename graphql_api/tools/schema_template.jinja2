@@ -1,28 +1,23 @@
 import os
 import graphene
 from jinja2 import Template
-from graphql_api.constants.constant import TableTypes
-from graphql_api.tools.dbutils import connection
-from graphene.utils.str_converters import to_snake_case
 
-from graphql_api.models import Table, Relationship
 from graphql_api.tools.parser import parse
+from graphql_api.models import Table, Relationship
+from graphql_api.tools.dbutils import connection
 
 {# graphql objects definition #}
 {% for obj in objects %}
 class {{ obj.class_name }}(graphene.ObjectType):
-    {% for child in obj.children %}
+    {% for child in obj.children -%}
     {{ child.child_field_name }} = graphene.Field(
         {{ child.child_table_name }},
         resolver=lambda parent, context: {{ child.child_table_name }}()
     )
-    {% endfor %}
+    {% endfor -%}
 
-    {% for field in obj.fields %}
-    {{ field }} = graphene.Field(
-        graphene.String,
-        resolver=lambda parent, context: '{{ field }}'
-    )
+    {%- for field in obj.fields -%}
+    {{ field }} = graphene.String(default_value='{{ field }}')
     {% endfor %}
 {% endfor %}
 
