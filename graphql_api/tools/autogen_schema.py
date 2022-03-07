@@ -3,6 +3,7 @@ import os
 import time
 
 import graphene
+from django.core.exceptions import ValidationError
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from jinja2 import Template
 
@@ -11,12 +12,17 @@ from graphql_api.models import Table, Relationship
 logger = logging.getLogger(__name__)
 
 
-def dfs(vertices, vertices_visited):
+def dfs(vertices, vertices_visited, validate=False):
+    keys_visited_len = len(vertices_visited.keys())
+
     for vetex, child_vetxcies in vertices.items():
         if vetex in vertices_visited.keys():
             continue
         elif not child_vetxcies or all(child_vetex in vertices_visited.keys() for child_vetex in child_vetxcies):
             vertices_visited[vetex] = child_vetxcies
+
+    if validate and keys_visited_len == len(vertices_visited.keys()):
+        raise ValidationError(f'DAG exist circle...')
 
     if vertices != vertices_visited:
         return dfs(vertices, vertices_visited)

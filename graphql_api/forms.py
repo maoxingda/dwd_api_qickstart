@@ -5,7 +5,8 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.html import format_html
 
-from graphql_api.models import Relationship
+from graphql_api.models import Relationship, Table
+from graphql_api.tools.autogen_schema import dfs
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 class RelationshipAdminForm(ModelForm):
     def clean(self):
         super(RelationshipAdminForm, self).clean()
+
         ltbl = self.cleaned_data['left_table_name']
         rtbl = self.cleaned_data['right_table_name']
 
@@ -41,3 +43,18 @@ class RelationshipAdminForm(ModelForm):
             if column.startswith('{{ r }}'):
                 if rtbl.column_set.filter(name=column[8:]).count() == 0:
                     raise ValidationError(f'unknown column: {column[8:]}')
+
+        # is dag circle exist?
+        tables_children = {}
+        for table in Table.objects.all():
+            tables_children[table.name] = []
+            for relationship in Relationship.objects.all():
+                if relationship.left_table_name_id == table.id:
+                    tables_children[table.name].append(relationship.right_table_name.name)
+
+        if ltbl.name in tables_children.keys():
+            tables_children[ltbl.name].append(rtbl.name)
+        else:
+            tables_children[ltbl.name] = [rtbl.name]
+
+        dfs(tables_children, {}, True)
