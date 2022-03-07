@@ -5,11 +5,12 @@ import time
 from dbutils import connection
 
 if __name__ == '__main__':
+    prod = '1'
     tables = []
     aliases = []
     start = time.time()
 
-    with connection(prod='1') as get_tables_conn:
+    with connection(prod=prod) as get_tables_conn:
         with get_tables_conn.cursor() as get_tables_cursor:
             get_tables_cursor.execute('set search_path to dwd, dim')
             get_tables_cursor.execute(f"select distinct tablename from pg_table_def where schemaname = 'dim'")
@@ -41,7 +42,7 @@ if __name__ == '__main__':
         truncate_cursor.execute(sql)
 
     table_column_ref = []
-    with connection(prod=False) as get_table_columns_conn:
+    with connection(prod=prod) as get_table_columns_conn:
         with get_table_columns_conn.cursor() as get_table_columns_cursor:
             with sqlite3.connect('../../db.sqlite3') as sqlite_conn:
                 sqlite_cursor = sqlite_conn.cursor()
@@ -49,6 +50,9 @@ if __name__ == '__main__':
                     table_name = table[0]
                     table_alias = table[1]
                     table_type = table[2].upper()
+
+                    # if table_name not in ('user_orders', 'meal_plans', 'cities'):
+                    #     continue
 
                     get_table_columns_cursor.execute('set search_path to dwd, dim')
                     get_table_columns_cursor.execute(f'''

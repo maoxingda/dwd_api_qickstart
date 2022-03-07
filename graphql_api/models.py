@@ -41,7 +41,7 @@ class Relationship(models.Model):
     join_type = models.CharField(max_length=16, choices=[
         (jt.name, jt.value) for jt in JoinTypes
     ], default=JoinTypes.INNER_JOIN)
-    join_condition = models.TextField(default='{{ l }}.column_name = {{ r }}.column_name')
+    join_condition = models.TextField(default='{{ l }}.foreign_key = {{ r }}.id')
 
     def __str__(self):
         return self.left_table_name.name + '__' + self.right_table_name.name
