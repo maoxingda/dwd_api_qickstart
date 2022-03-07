@@ -9,7 +9,7 @@ if __name__ == '__main__':
     aliases = []
     start = time.time()
 
-    with connection(prod=False) as get_tables_conn:
+    with connection(prod='1') as get_tables_conn:
         with get_tables_conn.cursor() as get_tables_cursor:
             get_tables_cursor.execute('set search_path to dwd, dim')
             get_tables_cursor.execute(f"select distinct tablename from pg_table_def where schemaname = 'dim'")
@@ -72,7 +72,7 @@ if __name__ == '__main__':
                     for column in [row[2] for row in get_table_columns_cursor.fetchall()]:
                         sql = f"insert into graphql_api_column (name, table_id) values ('{column}', {table_id})"
                         sqlite_cursor.execute(sql)
-                        # print(sql)
+                        print(sql)
 
                         if column.endswith('_id'):
                             ref_table_name = column[:-3]

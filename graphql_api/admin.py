@@ -22,6 +22,7 @@ class TableAdmin(admin.ModelAdmin):
     inlines = [
         ColumnInline,
     ]
+    show_full_result_count = False
 
     def get_search_results(self, request, queryset, search_term):
         queryset, may_have_duplicates = super().get_search_results(
