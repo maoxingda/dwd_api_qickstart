@@ -1,5 +1,3 @@
-import json
-
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -10,11 +8,11 @@ class Table(models.Model):
     name = models.CharField(max_length=128, unique=True, db_index=True,
                             validators=(RegexValidator(TABLE_NAME_REGEXP),),
                             help_text=f'''
-                            at least 5 chars, at most 128 chars. 
-                            begins with letter, consist of (letter | digit | underscore). 
-                            regexp validator: {TABLE_NAME_REGEXP}
+                                at least 5 chars, at most 128 chars. 
+                                begins with letter, consist of (letter | digit | underscore). 
+                                regexp validator: {TABLE_NAME_REGEXP}
                             ''')
-    alias = models.CharField(max_length=32, unique=True)
+    alias = models.CharField(max_length=32, unique=True, null=True, default=None)
     table_type = models.CharField(max_length=32, choices=[
         (table_type.name, table_type.value) for table_type in TableTypes
     ], default=TableTypes.DWD)
@@ -45,5 +43,3 @@ class Relationship(models.Model):
 
     def __str__(self):
         return self.left_table_name.name + '__' + self.right_table_name.name
-        # return json.dumps({attr_name: value for attr_name, value in vars(self).items() if attr_name != '_state'},
-        #                   default=str)
