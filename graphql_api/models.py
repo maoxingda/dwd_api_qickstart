@@ -12,7 +12,7 @@ class Table(models.Model):
                                 begins with letter, consist of (letter | digit | underscore). 
                                 regexp validator: {TABLE_NAME_REGEXP}
                             ''')
-    alias = models.CharField(max_length=32, unique=True, null=True, default=None)
+    alias = models.CharField(max_length=32, unique=True, null=True)
     table_type = models.CharField(max_length=32, choices=[
         (table_type.name, table_type.value) for table_type in TableTypes
     ], default=TableTypes.DWD)
