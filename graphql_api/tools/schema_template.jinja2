@@ -8,7 +8,7 @@ class {{ obj.class_name }}(graphene.ObjectType):
     {% for child in obj.children -%}
     {{ child.child_field_name }} = graphene.Field(
         {{ child.child_table_name }},
-        resolver=lambda _, info: {{ child.child_table_name }}()
+        resolver=lambda _, __: {{ child.child_table_name }}()
     )
     {% endfor -%}
 
@@ -22,7 +22,7 @@ class {{ obj.class_name }}(graphene.ObjectType):
 class {{ obj.class_name }}_(MeicanObjectType):
     {{ obj.wrapper_class_field_name }} = graphene.Field(
         {{ obj.class_name }},
-        resolver=lambda _, info: {{ obj.class_name }}()
+        resolver=lambda _, __: {{ obj.class_name }}()
     )
 {% endfor %}
 

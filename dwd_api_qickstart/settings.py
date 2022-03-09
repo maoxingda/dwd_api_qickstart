@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",  # Required for GraphiQL
     "graphene_django",
     "graphql_api",
+    'admin_auto_filters',
 ]
 
 MIDDLEWARE = [
