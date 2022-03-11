@@ -10,11 +10,11 @@ from graphql_api.tools.parser import parse
 
 def resolve_func(cls, context):
     tables = Table.objects.all()
-    tables_alias = {table.name: table.alias for table in tables}
+    tables_alias = {table.name.split('.')[-1]: table.alias for table in tables}
 
     def get_table(table_name_):
         for table in tables:
-            if table.name == table_name_:
+            if table.name.split('.')[-1] == table_name_:
                 return table
 
     # parse from tables and select columns from graphql context
@@ -44,8 +44,8 @@ def resolve_func(cls, context):
         assert len(relationships) == 1, f'({parent_table.name} ---> {table.name}), relationship not unique.'
 
         for relationship in relationships:
-            table_fq = f'{table.table_type.lower()}.{table.name}'
-            parent_table_fq = f'{parent_table.table_type.lower()}.{parent_table.name}'
+            table_fq = table.name
+            parent_table_fq = parent_table.name
 
             if f'{parent_table_fq} as {parent_table.alias}' not in from_clause:
                 from_clause.append(f'{parent_table_fq} as {parent_table.alias}')
@@ -61,8 +61,8 @@ def resolve_func(cls, context):
                 Template(relationship.join_condition).render({'l': parent_table.alias, 'r': table.alias}))
 
     sql = [
-        f'select {", ".join(select_columns if from_clause else [column[column.index(".") + 1:] for column in select_columns])}',
-        f'from {" ".join(from_clause if from_clause else [get_table(table_name).table_type.lower() + "." + table_name])}'
+        f'select {", ".join(select_columns if from_clause else [column.split(".")[-1] for column in select_columns])}',
+        f'from {" ".join(from_clause if from_clause else [get_table(table_name).name])}'
     ]
 
     # test only.

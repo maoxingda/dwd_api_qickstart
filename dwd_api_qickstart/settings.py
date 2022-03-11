@@ -152,3 +152,12 @@ LOGGING = {
         },
     }
 }
+
+DWD_API_TAGS = {
+    'ingestion': 'dwd-api',
+    'entry': 'business-procedure',
+}
+
+# FIXME
+SERVER_ADDR = 'http://127.0.0.1:8000'
+METADATA_SERVER_ADDR = 'http://localhost:8080'

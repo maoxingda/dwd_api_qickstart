@@ -19,17 +19,19 @@ class {{ obj.class_name }}(graphene.ObjectType):
 
 {# wrapper sql & data field #}
 {% for obj in objects %}
+{%- if obj.entry %}
 class {{ obj.class_name }}_(MeicanObjectType):
     {{ obj.wrapper_class_field_name }} = graphene.Field(
         {{ obj.class_name }},
         resolver=lambda _, __: {{ obj.class_name }}()
     )
+{%- endif %}
 {% endfor %}
 
 {# graphql qeury entry points #}
 class Query(graphene.ObjectType):
 {%- for obj in objects %}
-{%- if obj.table_type == 'DWD' %}
+{%- if obj.entry %}
     {{ obj.wrapper_class_field_name }}_ = graphene.Field(
         {{ obj.class_name }}_,
         resolver=lambda _, info: resolve_func({{ obj.class_name }}_, info)

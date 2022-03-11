@@ -13,7 +13,8 @@ def parse(ast, tables_alias):
             if level == 2 and field.name.value in ('sql', 'data'):
                 continue
             if field.selection_set is None:
-                tables[node.name.value]['columns'].append(f'{tables_alias[node.name.value]}.{field.name.value}')
+                alias = tables_alias[node.name.value] if tables_alias[node.name.value] else node.name.value
+                tables[node.name.value]['columns'].append(f'{alias}.{field.name.value}')
                 continue
 
             _parse(field, tables, node.name.value, level + 1)

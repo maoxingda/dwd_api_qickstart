@@ -3,6 +3,7 @@ import os
 import time
 
 import graphene
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from jinja2 import Template
@@ -40,13 +41,13 @@ def build_schema():
         relationships = Relationship.objects.all()
 
         # collect table's children.
-        tables_type = {}
+        is_query_entry = {}
         tables_children = {}
         for table in tables:
-            tables_type[table.name] = table.table_type
+            is_query_entry[table.name] = settings.DWD_API_TAGS['entry'] in table.tags.split(',')
             tables_children[table.name] = []
             for relationship in relationships:
-                if relationship.left_table_name_id == table.id:
+                if relationship.left_table_name_id == table.pk:
                     tables_children[table.name].append(relationship.right_table_name.name)
 
         # define leaf node firstly.
@@ -66,17 +67,17 @@ def build_schema():
 
             table_children = []
             for child in children:
-                child_table_name = child[0].upper() + to_camel_case(child[1:])
-                child_field_name = to_snake_case(child)
+                child_table_name = child.split('.')[-1][0].upper() + to_camel_case(child.split('.')[-1][1:])
+                child_field_name = to_snake_case(child.split('.')[-1])
                 table_children.append({
                     'child_table_name': child_table_name,
                     'child_field_name': child_field_name,
                 })
 
             graphql_objects.append({
-                'class_name': table_name[0].upper() + to_camel_case(table_name[1:]),
-                'wrapper_class_field_name': table_name,
-                'table_type': tables_type[table_name],
+                'class_name': table_name.split('.')[-1][0].upper() + to_camel_case(table_name.split('.')[-1][1:]),
+                'wrapper_class_field_name': table_name.split('.')[-1],
+                'entry': is_query_entry[table_name],
                 'fields': table_columns,
                 'children': table_children,
             })
