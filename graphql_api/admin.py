@@ -11,18 +11,35 @@ admin.site.site_header = 'dwd'
 class ColumnInline(admin.TabularInline):
     model = Column
     extra = 0
+    readonly_fields = ('name',)
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Table)
 class TableAdmin(admin.ModelAdmin):
     search_fields = ('name', 'alias')
-    list_filter = ('table_type',)
-    list_display = ('name', 'alias', 'table_type')
+    # list_filter = ('table_type',)
+    list_display = ('name', 'alias', 'tags')
     # list_editable = ('alias',)
     inlines = [
         ColumnInline,
     ]
+    readonly_fields = ('urn', 'name', 'tags',)
     show_full_result_count = False
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        return True
 
     def get_search_results(self, request, queryset, search_term):
         queryset, may_have_duplicates = super().get_search_results(

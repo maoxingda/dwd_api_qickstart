@@ -5,6 +5,7 @@ from graphql_api.constants.constant import TableTypes, JoinTypes, TABLE_NAME_REG
 
 
 class Table(models.Model):
+    urn = models.CharField(max_length=512, primary_key=True)
     name = models.CharField(max_length=128, unique=True, db_index=True,
                             validators=(RegexValidator(TABLE_NAME_REGEXP),),
                             help_text=f'''
@@ -13,9 +14,10 @@ class Table(models.Model):
                                 regexp validator: {TABLE_NAME_REGEXP}
                             ''')
     alias = models.CharField(max_length=32, unique=True, null=True)
-    table_type = models.CharField(max_length=32, choices=[
-        (table_type.name, table_type.value) for table_type in TableTypes
-    ], default=TableTypes.DWD)
+    tags = models.CharField(max_length=1024)
+    # table_type = models.CharField(max_length=32, choices=[
+    #     (table_type.name, table_type.value) for table_type in TableTypes
+    # ], default=TableTypes.DWD)
 
     # display columns in list view page.
     def columns(self):
