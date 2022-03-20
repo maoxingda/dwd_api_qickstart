@@ -44,7 +44,7 @@ def build_schema():
         is_query_entry = {}
         tables_children = {}
         for table in tables:
-            is_query_entry[table.name] = settings.DWD_API_TAGS['entry'] in table.tags.split(',')
+            is_query_entry[table.name] = settings.DWD_API_TAGS['entry'] in [tag.strip() for tag in table.tags.split(',')]
             tables_children[table.name] = []
             for relationship in relationships:
                 if relationship.left_table_name_id == table.pk:

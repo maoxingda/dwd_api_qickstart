@@ -5,16 +5,11 @@ from graphql_api.constants.constant import TableTypes, JoinTypes, TABLE_NAME_REG
 
 
 class Table(models.Model):
-    urn = models.CharField(max_length=512, primary_key=True)
-    name = models.CharField(max_length=128, unique=True, db_index=True,
-                            validators=(RegexValidator(TABLE_NAME_REGEXP),),
-                            help_text=f'''
-                                at least 5 chars, at most 128 chars. 
-                                begins with letter, consist of (letter | digit | underscore). 
-                                regexp validator: {TABLE_NAME_REGEXP}
-                            ''')
+    # reserve field
+    urn = models.CharField(max_length=512, primary_key=True, editable=False)
+    name = models.CharField(max_length=128, unique=True, db_index=True)
     alias = models.CharField(max_length=32, unique=True, null=True)
-    tags = models.CharField(max_length=1024)
+    tags = models.CharField(max_length=1024, null=True)
     # table_type = models.CharField(max_length=32, choices=[
     #     (table_type.name, table_type.value) for table_type in TableTypes
     # ], default=TableTypes.DWD)

@@ -29,7 +29,7 @@ class TableAdmin(admin.ModelAdmin):
     inlines = [
         ColumnInline,
     ]
-    readonly_fields = ('urn', 'name', 'tags',)
+    # readonly_fields = ('urn', 'name', 'tags',)
     show_full_result_count = False
 
     def has_add_permission(self, request):
@@ -39,7 +39,7 @@ class TableAdmin(admin.ModelAdmin):
         return True
 
     def has_change_permission(self, request, obj=None):
-        return True
+        return False
 
     def get_search_results(self, request, queryset, search_term):
         queryset, may_have_duplicates = super().get_search_results(
@@ -71,3 +71,15 @@ class RelationshipsAdmin(admin.ModelAdmin):
     radio_fields = {"join_type": admin.HORIZONTAL}
 
     show_full_result_count = False
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
