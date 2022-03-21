@@ -1,16 +1,21 @@
 import json
+import logging
 import uuid
 from string import Template
 
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 
 from graphql_api.models import Table, Column, Relationship
 
+logger = logging.getLogger(__name__)
 
+
+@require_http_methods(['POST'])
 def update_schema(request):
     transport = RequestsHTTPTransport(
         url=f'{settings.METADATA_SERVER_ADDR}/api/graphql/',  # FIXME
@@ -136,25 +141,30 @@ def update_schema(request):
 
 
 @csrf_exempt
+@require_http_methods(['POST'])
 def update_schema_v2(request):
     schemas = json.loads(request.body)
 
-    def get_schema(relation_name):
+    def get_schema(name):
         for schema in schemas:
-            if schema['relation_name'] == relation_name:
+            if schema['name'] == name:
                 return schema
 
     def is_tags_changed(old, new):
         old = set([o.strip() for o in old.split(',')])
         new = set([o.strip() for o in new.split(',')])
-        return old == new
+        return old != new
 
     def is_alias_changed(old, new):
-        return old == new
+        return old != new
 
     # 更新
     update_tables = []
-    update_tables_cand = Table.objects.filter(pk__in=[schema['relation_name'] for schema in schemas])
+    update_tables_cand = Table.objects.filter(pk__in=[schema['name'] for schema in schemas])
+
+    table_aliases = set()
+    for table in Table.objects.all():
+        table_aliases.add(table.alias)
 
     relationships_info = []
     for ut in update_tables_cand:
@@ -169,6 +179,8 @@ def update_schema_v2(request):
             ut.tags = tags
 
         if is_alias_changed(ut.alias, alias):
+            if alias in table_aliases:
+                return HttpResponse(status=500, reason=f'Table: {ut.name} ---> alias: {alias} not unique.')
             is_data_changed = True
             ut.alias = alias
 
@@ -214,16 +226,21 @@ def update_schema_v2(request):
     add_schemas = [
         schema
         for schema in schemas
-        if schema['relation_name'] not in [ut.name for ut in update_tables_cand]
+        if schema['name'] not in [ut.name for ut in update_tables_cand]
     ]
 
     add_tables = []
     add_columns = []
     for schema in add_schemas:
+        alias = schema.get('alias', 'alias_' + str(uuid.uuid1())[:8])
+        name = schema['name']
+        if alias in table_aliases:
+            return HttpResponse(status=500, reason=f'Table: {name} ---> alias: {alias} not unique.')
+
         table = Table(
-            urn=schema['relation_name'],
-            name=schema['relation_name'],
-            alias=schema.get('alias', 'alias_' + str(uuid.uuid1())[:8]),
+            urn=name,
+            name=name,
+            alias=alias,
             tags=', '.join(schema.get('tags', [])),
         )
         add_tables.append(table)
@@ -245,13 +262,13 @@ def update_schema_v2(request):
     Table.objects.bulk_create(add_tables)
     Column.objects.bulk_create(add_columns)
 
-    def get_table(relation_name):
+    def get_table(name):
         for ad in add_tables:
-            if relation_name == ad.name:
+            if name == ad.name:
                 return ad
 
         for ut in update_tables_cand:
-            if relation_name == ut.name:
+            if name == ut.name:
                 return ut
 
     relationships = []
@@ -266,5 +283,13 @@ def update_schema_v2(request):
         ))
 
     Relationship.objects.bulk_create(relationships)
+
+    # 删除
+    dbt_schema_names = {schema['name'] for schema in schemas}
+    table_names = {table.name for table in Table.objects.all()}
+    del_table_names = table_names - dbt_schema_names
+    del_tables = Table.objects.filter(pk__in=del_table_names)
+    if del_tables:
+        del_tables.delete()
 
     return HttpResponse()

@@ -24,6 +24,7 @@ def resolve_func(cls, context):
         return
 
     # cat sql
+    aliases = set()
     table_name = ''
     from_clause = []
     select_columns = []
@@ -48,11 +49,13 @@ def resolve_func(cls, context):
             parent_table_fq = parent_table.name
 
             if f'{parent_table_fq} as {parent_table.alias}' not in from_clause:
+                aliases.add(parent_table.alias)
                 from_clause.append(f'{parent_table_fq} as {parent_table.alias}')
 
             from_clause.append(relationship.join_type.lower().replace("_", " "))
 
             if f'{table_fq} as {table.alias}' not in from_clause:
+                aliases.add(table.alias)
                 from_clause.append(f'{table_fq} as {table.alias}')
 
             from_clause.append('on')
